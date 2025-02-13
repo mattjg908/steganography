@@ -108,7 +108,7 @@
   elixir steganography.exs
   ```
   This will parse out the text from the image and write it to a file
-  (`decode.txt`), it will also print out the raw bytes.
+  (`decode.txt`).
 
   Dr. Boady wrote the encoder and decoder in Python, this is a naive Elixir
   translation of his Python code (decoder only).
