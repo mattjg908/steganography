@@ -9,6 +9,9 @@ defmodule Steganography do
 
     <<_::binary-size(pixel_offset), pixel_data::binary>> = bin
 
+    # we bin_to_list, chunk_every, reverse and list_to_bin b/c BMPs are stored
+    # bottom to top. So, we want to split this bin into rows and read bottom to
+    # top
     pixel_data
     |> :binary.bin_to_list()
     # BMP row sizes must be multiples of 4, logic below may/not add padding
