@@ -1,5 +1,4 @@
 defmodule Steganography do
-  # 1 byte each for R, G, B- since this only supports 24-bit there's no alpha
   @bytes_per_pixel 3
 
   def read_bmp(file_path) do
@@ -9,21 +8,18 @@ defmodule Steganography do
 
     <<_::binary-size(pixel_offset), pixel_data::binary>> = bin
 
-    # we bin_to_list, chunk_every, reverse and list_to_bin b/c BMPs are stored
-    # bottom to top. So, we want to split this bin into rows and read bottom to
-    # top
-    pixel_data
-    |> :binary.bin_to_list()
-    # BMP row sizes must be multiples of 4, logic below may/not add padding
-    |> Enum.chunk_every(_row = div(img_width_in_pixels * @bytes_per_pixel + 3, 4) * 4)
-    |> Enum.reverse()
-    |> Stream.map(&:binary.list_to_bin/1)
-    |> Stream.flat_map(fn row ->
-      for <<pixels::binary-size(img_width_in_pixels * @bytes_per_pixel) <- row>>,
+    img_width_in_bytes = img_width_in_pixels * @bytes_per_pixel
+    # BMP row width must be a multiple of 4, below adds padding to width if needed
+    row_width = div(img_width_in_bytes + @bytes_per_pixel, 4) * 4
+
+    # BMP rows are stored bottom-up, so reverse them
+    Enum.reverse(for <<row::binary-size(row_width) <- pixel_data>>, do: row)
+    |> Enum.map(fn row ->
+      for <<pixels::binary-size(img_width_in_bytes) <- row>>,
           <<_b::7, b::1, _g::7, g::1, _r::7, r::1 <- pixels>>,
           do: [r, g, b]
     end)
-    |> Stream.flat_map(& &1)
+    |> List.flatten()
     |> Stream.chunk_every(8)
     |> Stream.reject(fn bits -> Enum.all?(bits, &(&1 == 0)) end)
     |> Stream.map(fn bits -> for bit <- bits, into: <<>>, do: <<bit::1>> end)
